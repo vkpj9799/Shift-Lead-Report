@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>CTO Shift Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161B;
+    --panel:#1A2028;
+    --panel-2:#212832;
+    --line:#2B3340;
+    --text:#E7EBF0;
+    --text-dim:#8B96A5;
+    --text-faint:#5C6674;
+    --amber:#F2B705;
+    --amber-dim:#5C4A0E;
+    --cyan:#22C7C0;
+    --cyan-dim:#123B3A;
+    --green:#34D399;
+    --red:#F0654C;
+    --purple:#B389F0;
+    --blue:#4EA1F0;
+    --gray:#8B96A5;
+    --danger:#F0654C;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 100px;}
+
+  /* ---------- Header (HMI strip) ---------- */
+  .hmi-strip{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;
+  }
+  .hmi-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex-shrink:0;
+    animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+  .hmi-title{font-size:15px;font-weight:600;letter-spacing:.02em;}
+  .hmi-sub{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .hmi-strip .spacer{flex:1;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    width:34px;height:34px;border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:15px;
+    transition:.15s;
+  }
+  .icon-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+  /* ---------- Generic ---------- */
+  label{display:block;font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  input[type=text],input[type=number],input[type=time],input[type=date],textarea,select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;
+    outline:none;transition:.15s;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--amber);}
+  textarea{resize:vertical;min-height:70px;}
+  .field{margin-bottom:16px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .btn{
+    border:none;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn-primary{background:var(--amber);color:#1A1400;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--text-dim);}
+  .btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+  .btn-danger:hover{background:rgba(240,101,76,.1);}
+  .btn-block{width:100%;justify-content:center;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ---------- Setup screen ---------- */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .setup-title{font-size:20px;font-weight:700;margin-bottom:4px;}
+  .setup-desc{font-size:13px;color:var(--text-dim);margin-bottom:20px;}
+  .tech-add-row{display:flex;gap:8px;margin-bottom:10px;}
+  .tech-add-row input{flex:1;}
+  .tech-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;min-height:20px;}
+  .chip{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+    padding:6px 10px 6px 12px;font-size:13px;display:flex;align-items:center;gap:8px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .chip button{
+    background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:14px;line-height:1;padding:0;
+  }
+  .chip button:hover{color:var(--red);}
+  .empty-hint{font-size:13px;color:var(--text-faint);font-style:italic;}
+
+  /* ---------- Area / Line selectors ---------- */
+  .btn-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .opt-btn{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;
+    font-family:inherit;transition:.15s;
+  }
+  .opt-btn:hover{border-color:var(--text-dim);}
+  .opt-btn.sel-formation.active{background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan);}
+  .opt-btn.sel-assembly.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
+  .opt-btn.line-active{background:var(--panel);border-color:var(--text);color:var(--text);box-shadow:inset 0 0 0 1px var(--text);}
+
+  .tech-select-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .tech-opt{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);
+    border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:'IBM Plex Mono',monospace;
+    transition:.15s;
+  }
+  .tech-opt.active{background:var(--amber);border-color:var(--amber);color:#1A1400;font-weight:600;}
+
+  /* ---------- Entry form panel ---------- */
+  .form-panel{border:1px solid var(--amber); background:var(--panel);}
+  .form-panel .setup-title{color:var(--amber);}
+  .form-actions{display:flex;gap:10px;margin-top:6px;}
+  .error-msg{color:var(--red);font-size:12.5px;margin-top:8px;}
+
+  /* ---------- Log list ---------- */
+  .log-header{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px;}
+  .log-header h2{font-size:15px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+  .entry-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:10px;
+  }
+  .entry-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .badge{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;
+  }
+  .badge-formation{background:var(--cyan-dim);color:var(--cyan);}
+  .badge-assembly{background:var(--amber-dim);color:var(--amber);}
+  .badge-PM{background:#123B2C;color:var(--green);}
+  .badge-BM{background:#3B1712;color:var(--red);}
+  .badge-PD{background:#2E1F3B;color:var(--purple);}
+  .badge-Improvement{background:#12293B;color:var(--blue);}
+  .badge-Other{background:#262C34;color:var(--gray);}
+  .entry-time{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--text-dim);margin-left:auto;}
+  .entry-line{font-size:13.5px;font-weight:600;color:var(--text-dim);margin-bottom:4px;}
+  .entry-desc{font-size:14px;line-height:1.45;margin-bottom:8px;}
+  .entry-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .entry-techs{font-size:12.5px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .entry-controls{display:flex;gap:6px;}
+  .mini-btn{
+    background:transparent;border:1px solid var(--line);color:var(--text-faint);
+    border-radius:6px;padding:5px 9px;font-size:11.5px;cursor:pointer;font-family:inherit;
+  }
+  .mini-btn:hover{color:var(--text);border-color:var(--text-dim);}
+
+  .empty-state{
+    text-align:center;padding:40px 20px;color:var(--text-faint);border:1px dashed var(--line);border-radius:var(--radius);
+  }
+  .empty-state .big{font-size:28px;margin-bottom:8px;}
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    max-width:720px;width:calc(100% - 32px);
+    display:flex;gap:10px;z-index:20;
+  }
+  .fab .btn{flex:1;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+
+  /* ---------- Summary modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;
+    z-index:50;
+  }
+  @media(min-width:600px){.modal-overlay{align-items:center;}}
+  .modal{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 0 0;
+    width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column;
+  }
+  @media(min-width:600px){.modal{border-radius:14px;}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);}
+  .modal-body{padding:18px;overflow-y:auto;}
+  #summaryText{
+    width:100%;min-height:340px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55;padding:14px;
+    white-space:pre;overflow:auto;
+  }
+  .modal-foot{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line);}
+  .copied-flag{font-size:12.5px;color:var(--green);align-self:center;}
+
+  ::selection{background:var(--amber);color:#1A1400;}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ---------------- State ---------------- */
+const LINES = {
+  formation: ["Jig Formation","HPCD","Selector","OCV","Degas","CDC","EOL"],
+  assembly: ["LNS","PKG"]
+};
+const WORK_TYPES = ["PM","BM","PD","Improvement","Other"];
+
+const STORAGE_KEY = "ctoShiftLogState_v1";
+
+function defaultState(){
+  return {
+    screen: "setup",       // 'setup' | 'log'
+    shiftDate: new Date().toISOString().slice(0,10),
+    technicians: [],
+    absentees: 0,
+    entries: [],
+    formOpen: false,
+    editingId: null,
+    form: blankForm(),
+    summaryOpen: false
+  };
+}
+function blankForm(){
+  return { area:"", line:"", workType:"", description:"", start:"", end:"", techs:[] };
+}
+
+let state = load() || defaultState();
+
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* ---------------- Helpers ---------------- */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(d){
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+function areaLabel(a){ return a === "formation" ? "Formation" : "Assembly"; }
+function lineList(area){ return LINES[area] || []; }
+
+function sortedEntriesDesc(){
+  // most recently added first, for the working log view
+  return [...state.entries].sort((a,b) => b._ts - a._ts);
+}
+
+/* ---------------- Render root ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = state.screen === 'setup' ? renderSetup() : renderLog();
+  bindEvents();
+  save();
+}
+
+/* ---------------- Setup screen ---------------- */
+function renderSetup(){
+  const techChips = state.technicians.map((t,i) => `
+    <span class="chip">${esc(t)}<button data-remove-tech="${i}" title="Remove">✕</button></span>
+  `).join('') || `<span class="empty-hint">No technicians added yet</span>`;
+
+  return `
+    <div class="hmi-strip">
+      <div class="hmi-dot"></div>
+      <div>
+        <div class="hmi-title">CTO Cell Line — Shift Log</div>
+        <div class="hmi-sub">Setup</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="setup-title">Shift details</div>
+      <div class="setup-desc">Enter who's on shift before logging work. You can edit this any time from the log screen.</div>
+
+      <div class="field">
+        <label>Shift date</label>
+        <input type="date" id="shiftDate" value="${state.shiftDate}">
+      </div>
+
+      <div class="field">
+        <label>Technicians on shift</label>
+        <div class="tech-add-row">
+          <input type="text" id="techInput" placeholder="Type a name and press Add" autocomplete="off">
+          <button class="btn btn-primary" id="addTechBtn">Add</button>
+        </div>
+        <div class="tech-chips">${techChips}</div>
+      </div>
+
+      <div class="field">
+        <label>Number of absentees</label>
+        <input type="number" id="absentees" min="0" value="${state.absentees}" style="max-width:120px;">
+      </div>
+
+      <button class="btn btn-primary btn-block" id="startLogBtn" ${state.technicians.length===0 ? 'disabled' : ''}>
+        ${state.entries.length ? 'Continue to log' : 'Start shift log'}
+      </button>
+    </div>
+  `;
+}
+
+/* ---------------- Log screen ---------------- */
+function renderLog(){
+  const entries = sortedEntriesDesc();
+  const entryCards = entries.map(renderEntryCard).join('') || `
+    <div class="empty-state">
+      <div class="big">🗒️</div>
+      No entries yet. Tap <strong>+ Add Entry</strong> to log the first job.
+    </div>
+  `;
+
+  return `
+    <div class="hmi-strip">
+      <div class="hmi-dot"></div>
+      <div>
+        <div class="hmi-title">CTO Cell Line — Shift Log</div>
+        <div class="hmi-sub">${fmtDate(state.shiftDate)} · ${state.technicians.length} on shift · ${state.absentees} absent</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="editSetupBtn" title="Edit shift details">⚙</button>
+      <button class="btn btn-danger" id="clearShiftBtn" style="padding:7px 12px;font-size:12.5px;">New shift</button>
+    </div>
+
+    ${state.formOpen ? renderEntryForm() : ''}
+
+    <div class="log-header">
+      <h2>Work log (${state.entries.length})</h2>
+      ${state.entries.length ? `<button class="btn btn-ghost" id="openSummaryBtn" style="padding:7px 14px;font-size:12.5px;">📋 Generate report</button>` : ''}
+    </div>
+
+    ${entryCards}
+
+    ${!state.formOpen ? `
+      <div class="fab">
+        <button class="btn btn-primary btn-block" id="addEntryBtn">+ Add Entry</button>
+      </div>
+    ` : ''}
+
+    ${state.summaryOpen ? renderSummaryModal() : ''}
+  `;
+}
+
+function renderEntryCard(e){
+  return `
+    <div class="entry-card">
+      <div class="entry-top">
+        <span class="badge badge-${e.area}">${areaLabel(e.area)}</span>
+        <span class="badge badge-${e.workType}">${esc(e.workType)}</span>
+        <span class="entry-time">${e.start}–${e.end}</span>
+      </div>
+      <div class="entry-line">${esc(e.line)}</div>
+      <div class="entry-desc">${esc(e.description)}</div>
+      <div class="entry-bottom">
+        <div class="entry-techs">👤 ${e.techs.map(esc).join(', ')}</div>
+        <div class="entry-controls">
+          <button class="mini-btn" data-edit-entry="${e.id}">Edit</button>
+          <button class="mini-btn" data-delete-entry="${e.id}">Delete</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Entry form ---------------- */
+function renderEntryForm(){
+  const f = state.form;
+  const areaBtns = ['formation','assembly'].map(a => `
+    <button type="button" class="opt-btn sel-${a} ${f.area===a?'active':''}" data-set-area="${a}">${areaLabel(a)}</button>
+  `).join('');
+
+  const lineBtns = f.area ? lineList(f.area).map(l => `
+    <button type="button" class="opt-btn ${f.line===l?'line-active':''}" data-set-line="${esc(l)}">${esc(l)}</button>
+  `).join('') : '';
+
+  const typeOptions = WORK_TYPES.map(t => `<option value="${t}" ${f.workType===t?'selected':''}>${t}</option>`).join('');
+
+  const techBtns = state.technicians.map(t => `
+    <button type="button" class="tech-opt ${f.techs.includes(t)?'active':''}" data-toggle-tech="${esc(t)}">${esc(t)}</button>
+  `).join('') || `<span class="empty-hint">No technicians on shift — add them in Setup.</span>`;
+
+  return `
+    <div class="panel form-panel">
+      <div class="setup-title">${state.editingId ? 'Edit entry' : 'New work entry'}</div>
+      <div class="setup-desc">Select the area, then fill in the details of the work.</div>
+
+      <div class="field">
+        <label>Area</label>
+        <div class="btn-grid">${areaBtns}</div>
+      </div>
+
+      ${f.area ? `
+        <div class="field">
+          <label>Line</label>
+          <div class="btn-grid">${lineBtns}</div>
+        </div>
+      ` : ''}
+
+      <div class="field">
+        <label>Type of work</label>
+        <select id="workType">
+          <option value="" disabled ${!f.workType?'selected':''}>Select type</option>
+          ${typeOptions}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Work done</label>
+        <textarea id="description" placeholder="Describe what was done...">${esc(f.description)}</textarea>
+      </div>
+
+      <div class="field row2">
+        <div>
+          <label>Start time</label>
+          <input type="time" id="startTime" value="${f.start}">
+        </div>
+        <div>
+          <label>End time</label>
+          <input type="time" id="endTime" value="${f.end}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Technician(s) allocated</label>
+        <div class="tech-select-grid">${techBtns}</div>
+      </div>
+
+      <div id="formError" class="error-msg" style="display:none;"></div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="saveEntryBtn">Save entry</button>
+        <button class="btn btn-ghost" id="cancelEntryBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Summary ---------------- */
+function buildSummaryText(){
+  const lines = [];
+  lines.push(`CTO CELL LINE — SHIFT LOG`);
+  lines.push(`Date: ${fmtDate(state.shiftDate)}`);
+  lines.push(`Technicians on Shift (${state.technicians.length}): ${state.technicians.join(', ') || '—'}`);
+  lines.push(`Absent: ${state.absentees}`);
+  lines.push('');
+
+  const counts = {};
+  WORK_TYPES.forEach(t => counts[t] = 0);
+  state.entries.forEach(e => counts[e.workType] = (counts[e.workType]||0) + 1);
+  lines.push(`Total entries: ${state.entries.length}  |  ` + WORK_TYPES.map(t => `${t}: ${counts[t]}`).join('  ·  '));
+  lines.push('');
+  lines.push('='.repeat(60));
+
+  ['formation','assembly'].forEach(area => {
+    const areaEntries = state.entries.filter(e => e.area === area);
+    if(!areaEntries.length) return;
+    lines.push('');
+    lines.push(areaLabel(area).toUpperCase());
+
+    lineList(area).forEach(line => {
+      const lineEntries = areaEntries
+        .filter(e => e.line === line)
+        .sort((a,b) => a.start.localeCompare(b.start));
+      if(!lineEntries.length) return;
+      lines.push(`  ${line}`);
+      lineEntries.forEach(e => {
+        lines.push(`    ${e.start}–${e.end}  [${e.workType}]  ${e.description}`);
+        lines.push(`        Techs: ${e.techs.join(', ')}`);
+      });
+    });
+  });
+
+  lines.push('');
+  lines.push('='.repeat(60));
+  return lines.join('\n');
+}
+
+function renderSummaryModal(){
+  const text = buildSummaryText();
+  return `
+    <div class="modal-overlay" id="summaryOverlay">
+      <div class="modal">
+        <div class="modal-head">
+          <h3 style="font-size:16px;">Shift report</h3>
+          <button class="icon-btn" id="closeSummaryBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <textarea id="summaryText" readonly>${esc(text)}</textarea>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-primary" id="copySummaryBtn">Copy for OneNote</button>
+          <span class="copied-flag" id="copiedFlag" style="display:none;">Copied ✓</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Events ---------------- */
+function bindEvents(){
+  // ---- Setup screen ----
+  const shiftDate = document.getElementById('shiftDate');
+  if(shiftDate) shiftDate.onchange = e => { state.shiftDate = e.target.value; save(); };
+
+  const addTechBtn = document.getElementById('addTechBtn');
+  const techInput = document.getElementById('techInput');
+  if(addTechBtn){
+    const doAdd = () => {
+      const name = techInput.value.trim();
+      if(!name) return;
+      state.technicians.push(name);
+      techInput.value = '';
+      render();
+      document.getElementById('techInput').focus();
+    };
+    addTechBtn.onclick = doAdd;
+    techInput.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); doAdd(); } };
+  }
+  document.querySelectorAll('[data-remove-tech]').forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.removeTech);
+      const removed = state.technicians[i];
+      state.technicians.splice(i,1);
+      // also strip from any saved entries' tech lists
+      state.entries.forEach(e => { e.techs = e.techs.filter(t => t !== removed); });
+      render();
+    };
+  });
+
+  const absentees = document.getElementById('absentees');
+  if(absentees) absentees.onchange = e => { state.absentees = Math.max(0, parseInt(e.target.value)||0); save(); };
+
+  const startLogBtn = document.getElementById('startLogBtn');
+  if(startLogBtn) startLogBtn.onclick = () => { state.screen = 'log'; render(); };
+
+  // ---- Log screen ----
+  const editSetupBtn = document.getElementById('editSetupBtn');
+  if(editSetupBtn) editSetupBtn.onclick = () => { state.screen = 'setup'; render(); };
+
+  const clearShiftBtn = document.getElementById('clearShiftBtn');
+  if(clearShiftBtn) clearShiftBtn.onclick = () => {
+    if(clearShiftBtn.dataset.armed === '1'){
+      state = defaultState();
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      render();
+    } else {
+      clearShiftBtn.dataset.armed = '1';
+      clearShiftBtn.textContent = 'Tap again to clear';
+      setTimeout(() => {
+        if(document.body.contains(clearShiftBtn)){
+          clearShiftBtn.dataset.armed = '';
+          clearShiftBtn.textContent = 'New shift';
+        }
+      }, 3000);
+    }
+  };
+
+  const addEntryBtn = document.getElementById('addEntryBtn');
+  if(addEntryBtn) addEntryBtn.onclick = () => {
+    state.form = blankForm();
+    state.editingId = null;
+    state.formOpen = true;
+    render();
+    document.querySelector('.form-panel')?.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  document.querySelectorAll('[data-edit-entry]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.editEntry;
+      const e = state.entries.find(x => x.id === id);
+      if(!e) return;
+      state.form = { area:e.area, line:e.line, workType:e.workType, description:e.description, start:e.start, end:e.end, techs:[...e.techs] };
+      state.editingId = id;
+      state.formOpen = true;
+      render();
+      document.querySelector('.form-panel')?.scrollIntoView({behavior:'smooth', block:'start'});
+    };
+  });
+
+  document.querySelectorAll('[data-delete-entry]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.deleteEntry;
+      state.entries = state.entries.filter(x => x.id !== id);
+      render();
+    };
+  });
+
+  const openSummaryBtn = document.getElementById('openSummaryBtn');
+  if(openSummaryBtn) openSummaryBtn.onclick = () => { state.summaryOpen = true; render(); };
+  const closeSummaryBtn = document.getElementById('closeSummaryBtn');
+  if(closeSummaryBtn) closeSummaryBtn.onclick = () => { state.summaryOpen = false; render(); };
+  const summaryOverlay = document.getElementById('summaryOverlay');
+  if(summaryOverlay) summaryOverlay.onclick = (e) => { if(e.target === summaryOverlay){ state.summaryOpen = false; render(); } };
+
+  const copySummaryBtn = document.getElementById('copySummaryBtn');
+  if(copySummaryBtn) copySummaryBtn.onclick = async () => {
+    const text = buildSummaryText();
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.getElementById('summaryText');
+      ta.select();
+      document.execCommand('copy');
+    }
+    const flag = document.getElementById('copiedFlag');
+    flag.style.display = 'inline';
+    setTimeout(() => { flag.style.display = 'none'; }, 2000);
+  };
+
+  // ---- Entry form ----
+  document.querySelectorAll('[data-set-area]').forEach(btn => {
+    btn.onclick = () => {
+      const area = btn.dataset.setArea;
+      if(state.form.area !== area){
+        state.form.area = area;
+        state.form.line = ''; // reset line when area changes
+      }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-set-line]').forEach(btn => {
+    btn.onclick = () => { state.form.line = btn.dataset.setLine; render(); };
+  });
+  document.querySelectorAll('[data-toggle-tech]').forEach(btn => {
+    btn.onclick = () => {
+      const t = btn.dataset.toggleTech;
+      const idx = state.form.techs.indexOf(t);
+      if(idx === -1) state.form.techs.push(t); else state.form.techs.splice(idx,1);
+      render();
+    };
+  });
+
+  const workType = document.getElementById('workType');
+  if(workType) workType.onchange = e => { state.form.workType = e.target.value; save(); };
+  const description = document.getElementById('description');
+  if(description) description.oninput = e => { state.form.description = e.target.value; save(); };
+  const startTime = document.getElementById('startTime');
+  if(startTime) startTime.onchange = e => { state.form.start = e.target.value; save(); };
+  const endTime = document.getElementById('endTime');
+  if(endTime) endTime.onchange = e => { state.form.end = e.target.value; save(); };
+
+  const cancelEntryBtn = document.getElementById('cancelEntryBtn');
+  if(cancelEntryBtn) cancelEntryBtn.onclick = () => { state.formOpen = false; state.editingId = null; render(); };
+
+  const saveEntryBtn = document.getElementById('saveEntryBtn');
+  if(saveEntryBtn) saveEntryBtn.onclick = () => {
+    const f = state.form;
+    const errEl = document.getElementById('formError');
+    const errs = [];
+    if(!f.area) errs.push('area');
+    if(!f.line) errs.push('line');
+    if(!f.workType) errs.push('type of work');
+    if(!f.description.trim()) errs.push('work done');
+    if(!f.start || !f.end) errs.push('start/end time');
+    if(!f.techs.length) errs.push('at least one technician');
+
+    if(errs.length){
+      errEl.style.display = 'block';
+      errEl.textContent = 'Please fill in: ' + errs.join(', ');
+      return;
+    }
+
+    if(state.editingId){
+      const e = state.entries.find(x => x.id === state.editingId);
+      Object.assign(e, { area:f.area, line:f.line, workType:f.workType, description:f.description.trim(), start:f.start, end:f.end, techs:[...f.techs] });
+    } else {
+      state.entries.push({
+        id: uid(), _ts: Date.now(),
+        area:f.area, line:f.line, workType:f.workType, description:f.description.trim(),
+        start:f.start, end:f.end, techs:[...f.techs]
+      });
+    }
+    state.formOpen = false;
+    state.editingId = null;
+    render();
+  };
+}
+
+render();
+</script>
+</body>
+</html>
